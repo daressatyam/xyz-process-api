@@ -1,0 +1,33 @@
+#%RAML 1.0
+title: ProcessAPI
+version: 1.0
+description:  API get the sales data and commision data.
+
+
+traits: 
+  errorresponse: !include exchange_modules/03173809-46cc-4abd-b798-3eb63a49ba7f/errorresponse/1.0.0/errorresponse.raml
+securitySchemes:
+  Oauth: !include exchange_modules/03173809-46cc-4abd-b798-3eb63a49ba7f/oauth20/1.0.0/oauth20.raml
+
+
+
+securedBy: [Oauth]
+/getsalesdata:
+    is: [errorresponse]
+    displayName: Get the New Sales Data
+    description:  To get the salesdata user orderID
+    get:
+      queryParameters:
+        orderID:
+          displayName: OrderID
+          required: true
+          default: 535113847
+          type: integer
+          example: 1234567
+      responses:
+        200:
+          body:
+            application/json:
+              examples:
+                input: !include salesdataexample.raml
+    

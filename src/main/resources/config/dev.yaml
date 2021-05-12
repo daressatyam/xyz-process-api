@@ -1,0 +1,7 @@
+db4:
+  host: "db4free.net"
+  port: "3306"
+  user: "teapot"
+  password: "![89sy/xCPAO1FoIB2VOxKSw==]"
+  database: "daress"
+  

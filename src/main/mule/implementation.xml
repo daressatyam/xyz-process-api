@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="Get-Sales-Details"
+		doc:id="1a9ef672-90f5-458f-b252-f487c65677ec">
+		<scatter-gather doc:name="Scatter-Gather"
+			doc:id="6bce94d2-dc8b-47d3-88cb-cf2420310647">
+			<route>
+				<db:select doc:id="4f16374c-bad2-488b-90c3-a5561a7b9525"
+					config-ref="Database_Config" doc:name="Commission Table">
+					<db:sql><![CDATA[SELECT * FROM Commission 
+WHERE order_id = :Order_ID]]></db:sql>
+					<db:input-parameters><![CDATA[#[{ 'Order_ID': vars.orderId}]]]></db:input-parameters>
+				</db:select>
+			</route>
+			<route>
+				<db:select doc:id="121a463c-b995-4a8f-8e5a-e4dfe481a1e8"
+					config-ref="Database_Config" doc:name="NewSalesData Table">
+					<db:sql><![CDATA[SELECT * FROM NewSalesData 
+WHERE order_id = :Order_ID]]></db:sql>
+					<db:input-parameters><![CDATA[#[{ 'Order_ID': vars.orderId}]]]></db:input-parameters>
+				</db:select>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Convert to JSON"
+			doc:id="c41b89c6-a9e7-4daf-a10a-d3b9844f0f57">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"NewSalesData" : payload[1].payload,
+	"CommissionData": payload[0].payload
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger"
+			doc:id="e382213f-4089-4e8a-ab3b-8b067ad5bd90" message="#[payload]" />
+		<error-handler>
+			<on-error-continue enableNotifications="true"
+				logException="true" doc:name="On Error Continue"
+				doc:id="7ef91bb7-735f-443e-9503-b76857d3c1f6" type="ANY">
+				<ee:transform doc:name="Transform Message"
+					doc:id="8904bf9c-970d-49c0-8165-108c83bb9e53">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"error-type":error.errorType,
+	"error-cause":error.cause.cause,
+	"error-cause-message": error.cause.message,
+	"errorMessage": error.errorMessage,
+	"error-description": error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>
